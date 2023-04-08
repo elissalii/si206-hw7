@@ -109,7 +109,15 @@ def nationality_search(countries, cur, conn):
 
 
 def birthyear_nationality_search(age, country, cur, conn):
-    pass
+    # Calculate the birth year cutoff based on the current year and the age passed
+    birth_year_cutoff = 2023 - age
+    
+    # Execute the SQL query to get the players
+    cur.execute("SELECT name, nationality, birthyear FROM Players WHERE nationality=? AND birthyear < ?", (country, birth_year_cutoff))
+    
+    # Fetch all the rows and return them as a list of tuples
+    players_list = cur.fetchall()
+    return players_list
 
 ## [TASK 4]: 15 points
 # finish the function position_birth_search
