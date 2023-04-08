@@ -58,12 +58,17 @@ def make_players_table(data, cur, conn):
     
     for player in data['squad']:
         # Get position_id from Positions table
-        cur.execute('SELECT id FROM Positions WHERE name=?', (player['position'],))
+        cur.execute('SELECT id FROM Positions WHERE position=?', (player['position'],))
         position_id = cur.fetchone()[0]
-        
+        birthyear = player.get('birthyear', 0)
+        nationality = player.get('nationality', None)
         # Insert player data into Players table
-        cur.execute('INSERT INTO Players (id, name, position_id, birthyear, nationality) VALUES (?, ?, ?, ?, ?)',
-                    (player['id'], player['name'], position_id, player['birthyear'], player['nationality']))
+        try:
+            cur.execute('INSERT INTO Players (id, name, position_id, birthyear, nationality) VALUES (?, ?, ?, ?, ?)',
+                        (player['id'], player['name'], position_id, birthyear, nationality))
+        except sqlite3.IntegrityError:
+            cur.execute('UPDATE Players SET name=?, position_id=?, birthyear=?, nationality=? WHERE id=?',
+                        (player['name'], position_id, birthyear, nationality, player['id']))
         conn.commit()
 
 ## [TASK 2]: 10 points
