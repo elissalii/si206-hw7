@@ -137,7 +137,15 @@ def birthyear_nationality_search(age, country, cur, conn):
     # HINT: You'll have to use JOIN for this task.
 
 def position_birth_search(position, age, cur, conn):
-       pass
+    # Calculate the birth year cutoff based on the current year and the age passed
+    birth_year_cutoff = 2023 - age
+    
+    # Execute the SQL query to get the players
+    cur.execute("SELECT Players.name, Positions.position, Players.birthyear FROM Players JOIN Positions ON Players.position_id=Positions.id WHERE Positions.position=? AND Players.birthyear > ?", (position, birth_year_cutoff))
+    
+    # Fetch all the rows and return them as a list of tuples
+    players_list = cur.fetchall()
+    return players_list if players_list else []
 
 
 # [EXTRA CREDIT]
@@ -176,13 +184,31 @@ def position_birth_search(position, age, cur, conn):
 #     the passed year. 
 
 def make_winners_table(data, cur, conn):
-    pass
+    teams = data["teams"]
+    for team in teams:
+        cur.execute("INSERT INTO Winners (id, name) VALUES (?, ?)", (team["id"], team["name"]))
+    conn.commit()
 
 def make_seasons_table(data, cur, conn):
-    pass
+    cur.execute("CREATE TABLE IF NOT EXISTS Seasons (id INTEGER PRIMARY KEY, winner_id TEXT, end_year INTEGER)")
+    for season in data:
+        if "winner" in season:
+            cur.execute("SELECT id FROM Winners WHERE name = ?", (season["winner"]["name"],))
+            winner_id = cur.fetchone()
+            if winner_id:
+                cur.execute("INSERT INTO Seasons (id, winner_id, end_year) VALUES (?, ?, ?)", (season["id"], winner_id[0], int(season["endYear"])))
+    conn.commit()
 
 def winners_since_search(year, cur, conn):
-    pass
+    cur.execute("""
+        SELECT Winners.name, COUNT(*) AS wins
+        FROM Seasons
+        JOIN Winners ON Seasons.winner_id = Winners.id
+        WHERE Seasons.end_year >= ?
+        GROUP BY Winners.name
+    """, (int(year),))
+    results = cur.fetchall()
+    return {row[0]: row[1] for row in results}
 
 
 class TestAllMethods(unittest.TestCase):
